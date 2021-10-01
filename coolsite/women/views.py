@@ -1,19 +1,41 @@
 from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse_lazy
+from django.views.generic import ListView, DetailView, CreateView
 
 from .forms import *
 from .models import *
 
-# Метод представления для главной страницы
-def index(request):
-    posts = Women.objects.all()
 
-    context = {
-        'title': 'Главная страница',
-        'posts': posts,
-        'cat_selected': 0,
-    }
-    return render(request, 'women/index.html', context=context)
+# Класс для отображения главной страницы
+class WomenHome(ListView):
+    model = Women   # Выберает все записи из таблицы и пытается вывести в виде списка
+    template_name = 'women/index.html'
+    context_object_name = 'posts'   # Чтобы в шаблоне в posts передать объект('posts': posts)
+    # extra_context = {'title': 'Главная страница'} # Так можно передатьт только статический контекст, динамически, а сним и статический передается в get_context_data
+
+    # Передать динамические данные
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs) # Получаем то, что уже передано в контекст, чтобы не затереть
+        # context['menu'] = menu  # Добавляем данные в контекст. Т.к. у меня меню реализовано с помощью тегов, этот вариант не используется
+        context['title'] = 'Главная страница'
+        context['cat_selected'] = 0
+        return context
+
+    # Фильтрация выборки
+    def get_queryset(self):
+        return Women.objects.filter(is_published=True)
+
+# Метод представления для главной страницы с помощью функций
+# def index(request):
+#     posts = Women.objects.all()
+#
+#     context = {
+#         'title': 'Главная страница',
+#         'posts': posts,
+#         'cat_selected': 0,
+#     }
+#     return render(request, 'women/index.html', context=context)
 
 
 def about(request):
@@ -21,22 +43,29 @@ def about(request):
     return render(request, 'women/about.html', context=context)
 
 
-def addpage(request):
+class AddPage(CreateView):
+    form_class = AddPostForm
+    template_name = 'women/addpage.html'
+    extra_context = {'title': 'Добавление статьи'}
+    # success_url = reverse_lazy('home')  # Редирект при успешном добавлении, если в модели не прописан get_absolute_url
 
-    if request.method == 'POST':
-        form = AddPostForm(request.POST, request.FILES) # Для загрузки изображений request.FILES
-        if form.is_valid():
-            # print(form.cleaned_data)
-            form.save()
-            return redirect('home')
-    else:
-        form = AddPostForm()    # Экземпляр формы
 
-    context = {
-        'title': 'Добавление статьи',
-        'form': form,
-    }
-    return render(request, 'women/addpage.html', context)
+# def addpage(request):
+#
+#     if request.method == 'POST':
+#         form = AddPostForm(request.POST, request.FILES) # Для загрузки изображений request.FILES
+#         if form.is_valid():
+#             # print(form.cleaned_data)
+#             form.save()
+#             return redirect('home')
+#     else:
+#         form = AddPostForm()    # Экземпляр формы
+#
+#     context = {
+#         'title': 'Добавление статьи',
+#         'form': form,
+#     }
+#     return render(request, 'women/addpage.html', context)
 
 
 def contact(request):
@@ -47,32 +76,62 @@ def login(request):
     return HttpResponse('Авторизация')
 
 
-def show_post(request, post_slug):
-    post = get_object_or_404(Women, slug=post_slug) # Если нет такого слага то вернет 404
+class ShowPost(DetailView):
+    model = Women
+    template_name = 'women/post.html'
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
 
-    context = {
-        'title': 'Отображение по рубрикам',
-        'post': post,
-        'title': post.title,
-        'cat_selected': post.cat_id,
-    }
-    return render(request, 'women/post.html', context=context)
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = context['post']
+        return context
+
+# def show_post(request, post_slug):
+#     post = get_object_or_404(Women, slug=post_slug) # Если нет такого слага то вернет 404
+#
+#     context = {
+#         #'title': 'Отображение по рубрикам',
+#         'post': post,
+#         'title': post.title,
+#         'cat_selected': post.cat_id,
+#     }
+#     return render(request, 'women/post.html', context=context)
 
 
-def show_category(request, cat_slug):
-    posts = Women.objects.filter(cat__slug=cat_slug)    # Я хз как но по фильтру cat__slug как то вытаскивает нужные рубрики
+# Класс представление для отображения категорий
+class WomanCategory(ListView):
+    model = Women  # Выберает все записи из таблицы и пытается вывести в виде списка
+    template_name = 'women/index.html'
+    context_object_name = 'posts'  # Чтобы в шаблоне в posts передать объект('posts': posts)
+    allow_empty = False # Если нет поста по указанному слагу то генерим 404
 
-    # Если передастся айди с несущ категорией, то из БД ничего не выберется, генерим 404
-    if len(posts) == 0:
-        raise Http404
+    # Передать динамические данные
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)  # Получаем то, что уже передано в контекст, чтобы не затереть
+        # context['menu'] = menu  # Добавляем данные в контекст. Т.к. у меня меню реализовано с помощью тегов, этот вариант не используется
+        context['title'] = 'Категория - ' + str(context['posts'][0].cat)
+        context['cat_selected'] = context['posts'][0].cat_id
+        return context
 
-    context = {
-        'posts': posts,
-        'title': 'Отображение по рубрикам',
-        'cat_selected': cat_slug,
-    }
+    # Фильтрация выборки
+    def get_queryset(self):
+        return Women.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True)
 
-    return render(request, 'women/index.html', context=context)
+# def show_category(request, cat_slug):
+#     posts = Women.objects.filter(cat__slug=cat_slug)    # Я хз как но по фильтру cat__slug как то вытаскивает нужные рубрики
+#
+#     # Если передастся айди с несущ категорией, то из БД ничего не выберется, генерим 404
+#     if len(posts) == 0:
+#         raise Http404
+#
+#     context = {
+#         'posts': posts,
+#         'title': 'Отображение по рубрикам',
+#         'cat_selected': cat_slug,
+#     }
+#
+#     return render(request, 'women/index.html', context=context)
 
 
 # Вторым параметром(catid) передаем айди категории для показа(ну так же можно передавать и для удаления записи)
