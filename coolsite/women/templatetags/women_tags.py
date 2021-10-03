@@ -17,7 +17,7 @@ def show_categories(sort=None, cat_selected=0):
         cats = Category.objects.all()
     else:
         cats = Category.objects.order_by(sort)
-    return {'cats': cats, 'cat_selected': cat_selected}\
+    return {'cats': cats, 'cat_selected': cat_selected}
 
 
 @register.inclusion_tag('women/menu.html')
@@ -26,4 +26,6 @@ def show_menu():
             {'title': "Добавить статью", 'url_name': 'add_page'},
             {'title': "Обратная связь", 'url_name': 'contact'},
             {'title': "Войти", 'url_name': 'login'}, ]
+
+
     return {'menu': menu}

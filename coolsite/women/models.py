@@ -24,7 +24,7 @@ class Women(models.Model):
     class Meta:
         verbose_name = 'Известные женщины'
         verbose_name_plural = 'Известные женщины'   # Для множественного
-        ordering = ['-time_create', 'title'] # Сортировка по дате создания
+        #ordering = ['-time_create', 'title'] # Сортировка по дате создания(влияет на запросы, входит в запрос и сортируется)
 
 class Category(models.Model):
     name = models.CharField(max_length=100, db_index=True, verbose_name="Категория")
@@ -39,7 +39,7 @@ class Category(models.Model):
     # Смена названия таблицы в админке
     class Meta:
         verbose_name = 'Категория'
-        verbose_name_plural = 'Категории'  # Для множественного
+        verbose_name_plural = 'Категории'  # Для мнжественного
         ordering = ['id']
 
 

@@ -17,8 +17,15 @@
 			<ul id="mainmenu" class="mainmenu">
 			<li class="logo"><a href="{% url 'home' %}"><div class="logo"></div></a></li>
 
-				<!--Отображение меню, прилетает из women_tags.py-->
-				{% show_menu %}
+				<!-- Если использовать	тэги  {% show_menu %}--> <!--Отображение меню, прилетает из women_tags.py-->
+				{% for m in menu %}
+					{% if not forloop.last %}
+							<li><a href="{% url m.url_name %}">{{m.title}}</a></li>
+					{% else %}
+							<li class="last"><a href="{% url m.url_name %}">{{m.title}}</a></li>
+					{% endif %}
+				{% endfor %}
+
 			</ul>
 			<div class="clear"></div>
 		</div>
@@ -36,8 +43,16 @@
 			<li><a href="{% url 'home' %}">Все категории</a></li>
 		{% endif %}
 
-		<!--Отображение категорий, прилетает из women_tags.py-->
-		{% show_categories cat_selected=cat_selected %}
+		<!--Отображение категорий, прилетает из women_tags.py  {% show_categories cat_selected=cat_selected %}-->
+		{% for c in cats %}
+			{% if c.women__count > 0 %}
+				{% if c.pk == cat_selected %}
+					<li class="selected">{{ c.name }}</li>
+				{% else %}
+					<li><a href="{{ c.get_absolute_url }}">{{ c.name }}</a></li>
+				{% endif %}
+			{% endif %}
+		{% endfor %}
 
 		<li class="share">
 			<p>Наш канал</p>
