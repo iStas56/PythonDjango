@@ -4,11 +4,12 @@ from .models import *
 
 menu = [{'title': "О сайте", 'url_name': 'about'},
             {'title': "Добавить статью", 'url_name': 'add_page'},
-            {'title': "Обратная связь", 'url_name': 'contact'},
-            {'title': "Войти", 'url_name': 'login'}, ]
+            {'title': "Обратная связь", 'url_name': 'contact'},]
 
 
 class DataMixin:
+    paginate_by = 3  # Количество элементов на странице(для классов представления)
+
     def get_user_context(self, **kwargs):
         context = kwargs
         cats = Category.objects.annotate(Count('women')) # Подсчитает посты у каждой рубрики и создаст словарь women__count(используется в шаблоне)
